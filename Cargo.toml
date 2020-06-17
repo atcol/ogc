@@ -1,0 +1,19 @@
+[package]
+name = "ogc"
+version = "0.1.0"
+authors = ["Alex <grampz@pm.me>"]
+edition = "2018"
+
+[dependencies]
+proptest = "0.10.0"
+roxmltree = "0.11.0"
+reqwest = "0.10.6"
+async-traits = "0.0.0"
+tokio = { version = "0.2.21", features = ["full"] }
+serde_json = "1.0.55"
+anyhow = "1.0.31"
+clap = "3.0.0-beta.1"
+tui = "0.9.5"
+serde = "1.0.112"
+serde-xml-rs = "0.4.0"
+serde_derive = "1.0.112"
