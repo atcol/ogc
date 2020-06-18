@@ -30,4 +30,4 @@ test :
 
 .PHONY: watch
 watch :
-	cargo-watch -x "test && cargo rustdoc && cargo run -- wms --url=file://./examples/WMS-1.1.1.xml"
+	cargo-watch -x "test && cargo rustdoc"
