@@ -1,4 +1,5 @@
 extern crate clap;
+extern crate reqwest;
 use clap::Clap;
 use crossterm::{
   event::{self, DisableMouseCapture, EnableMouseCapture, Event as CEvent, KeyCode},

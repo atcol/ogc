@@ -1,4 +1,3 @@
-use roxmltree::Node;
 use serde_xml_rs::from_reader;
 
 #[derive(Debug, Default, PartialEq, Deserialize, Serialize)]
