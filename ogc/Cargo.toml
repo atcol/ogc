@@ -5,15 +5,14 @@ edition = "2018"
 homepage = "https://gitlab.com/atc-/ogc"
 keywords = ["ogc", "geo", "map"]
 license = "MIT"
-license-file = "LICENSE"
 name = "ogc"
 readme = "../README.md"
 repository = "https://gitlab.com/atc-/ogc/"
 version = "0.2.0"
 
 [dependencies]
+async-trait = "0.1.36"
 proptest = "0.10.0"
-async-traits = "0.0.0"
 serde_json = "1.0.55"
 anyhow = "1.0.31"
 serde = "1.0.112"
