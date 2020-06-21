@@ -1,8 +1,8 @@
 /// Web Mapping Service support, v1.3.0.
 use async_trait::async_trait;
 use serde_xml_rs::from_reader;
-use std::io::{Error, ErrorKind};
 use std::fs::read_to_string;
+use std::io::{Error, ErrorKind};
 use std::path::PathBuf;
 
 #[async_trait]
@@ -102,7 +102,7 @@ pub struct GetCapabilities {
 pub fn get_capabilities_string(xml: String) -> Result<GetCapabilities, std::io::Error> {
   match from_reader(xml.as_bytes()) {
     Ok(w) => Ok(w),
-    Err(e) => Err(Error::new(ErrorKind::InvalidData, e))
+    Err(e) => Err(Error::new(ErrorKind::InvalidData, e)),
   }
 }
 
@@ -110,9 +110,15 @@ pub fn get_capabilities_string(xml: String) -> Result<GetCapabilities, std::io::
 pub fn get_capabilities_path(p: PathBuf) -> Result<GetCapabilities, std::io::Error> {
   match p.into_os_string().to_str() {
     Some(path) => read_to_string(path)
-        .and_then(|xml_str| get_capabilities_string(xml_str))
-        .or(Err(Error::new(ErrorKind::InvalidData, "Failed to parse as GetCapabilities"))),
-    None => Err(Error::new(ErrorKind::InvalidInput, "Could not convert to path")),
+      .and_then(|xml_str| get_capabilities_string(xml_str))
+      .or(Err(Error::new(
+        ErrorKind::InvalidData,
+        "Failed to parse as GetCapabilities",
+      ))),
+    None => Err(Error::new(
+      ErrorKind::InvalidInput,
+      "Could not convert to path",
+    )),
   }
 }
 
@@ -132,7 +138,7 @@ mod tests {
   use std::io::{Error, ErrorKind};
 
   struct ParseExpectation {
-    service_name:  String,
+    service_name: String,
     service_title: String,
     service_abstr: String,
     inner_layers_len: usize,
@@ -148,31 +154,25 @@ mod tests {
     let wms = wms_opt.unwrap();
     assert_eq!(wms.service.name, exp.service_name);
 
-    assert_eq!(
-      wms.service.title,
-      exp.service_title
-    );
+    assert_eq!(wms.service.title, exp.service_title);
 
-    assert_eq!(
-      wms.service.abstr,
-      exp.service_abstr,
-    );
+    assert_eq!(wms.service.abstr, exp.service_abstr,);
 
     assert!(wms.capability.layer.is_some());
     let layer_list = wms.capability.layer.unwrap();
     assert_eq!(layer_list.layers.len(), exp.inner_layers_len);
     for layer in layer_list.layers.iter() {
       if !exp.skip_llbbox {
-          assert!(layer.ll_bbox.is_some());
+        assert!(layer.ll_bbox.is_some());
       }
       if !exp.skip_layer_bbox {
         assert!(!layer.bbox.is_empty());
       }
       if !exp.skip_layer_list_name {
-          assert!(!layer.name.is_empty());
+        assert!(!layer.name.is_empty());
       }
       if !exp.skip_layer_srs {
-          assert!(!layer.srs.is_empty());
+        assert!(!layer.srs.is_empty());
       }
       assert!(!layer.title.is_empty());
     }
@@ -183,7 +183,9 @@ mod tests {
     let xml = read_to_string("./examples/WMS-1.1.1.xml").unwrap();
     let wms_opt = get_capabilities_string(xml);
     println!("{:?}", wms_opt);
-    verify_parse(wms_opt, ParseExpectation {
+    verify_parse(
+      wms_opt,
+      ParseExpectation {
         service_name: "OGC:WMS".to_string(),
         service_title: "Massachusetts Data from MassGIS (GeoServer)".to_string(),
         service_abstr: "Statewide Massachusetts data served by MassGIS via GeoServer.".to_string(),
@@ -192,7 +194,8 @@ mod tests {
         skip_layer_srs: false,
         skip_layer_bbox: false,
         skip_layer_list_name: false,
-    });
+      },
+    );
   }
 
   #[test]

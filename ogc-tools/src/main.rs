@@ -18,7 +18,7 @@ use tui::{
   backend::CrosstermBackend,
   layout::{Constraint, Direction, Layout},
   style::{Color, Modifier, Style},
-  widgets::{Block, Borders, Row, Table},
+  widgets::{Block, Borders, List, Row, Table, Text},
   Terminal,
 };
 
@@ -31,11 +31,11 @@ struct Args {
 
 #[derive(Clap)]
 enum SubCommand {
-  Wms(WmsCmd),
+  View(TuiCmd),
 }
 
 #[derive(Clap)]
-struct WmsCmd {
+struct TuiCmd {
   /// The URL to read
   #[clap(short, long)]
   url: String,
@@ -55,9 +55,9 @@ async fn main() -> Result<(), String> {
   execute!(stdout(), EnterAlternateScreen).unwrap();
   let args: Args = Args::parse();
   match args.subcmd {
-    SubCommand::Wms(w) => match get(w.url).await {
+    SubCommand::View(w) => match get(w.url).await {
       Ok(xml) => {
-        if let Ok(wms) = ogc::wms::from_string(xml) {
+        if let Ok(wms) = ogc::wms::get_capabilities_string(xml) {
           let stdout = io::stdout();
           let backend = CrosstermBackend::new(stdout);
           let mut terminal = Terminal::new(backend).unwrap();
@@ -83,38 +83,48 @@ async fn main() -> Result<(), String> {
           loop {
             terminal
               .draw(|mut f| {
-                let chunks = Layout::default()
-                  .direction(Direction::Vertical)
-                  .constraints([Constraint::Percentage(5), Constraint::Percentage(95)].as_ref())
+                let horiz_chunks = Layout::default()
+                  .direction(Direction::Horizontal)
+                  .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
                   .split(f.size());
 
-                let block = Block::default()
-                  .title(&wms.service.title)
-                  .borders(Borders::TOP);
-                f.render_widget(block, chunks[0]);
-                let row_style = Style::default().fg(Color::White);
-                let table = Table::new(
-                  ["Title", "SRS"].into_iter(),
-                  wms
-                    .capability
-                    .layer
-                    .layers
-                    .iter()
-                    .map(|l| Row::StyledData(vec![&l.title, &l.srs].into_iter(), row_style)),
-                )
-                .header_style(
-                  Style::default()
-                    .fg(Color::Yellow)
-                    .modifier(Modifier::UNDERLINED),
-                )
-                .widths(&[
-                  Constraint::Percentage(40),
-                  Constraint::Length(40),
-                  Constraint::Length(20),
-                ])
-                .style(Style::default().fg(Color::White))
-                .column_spacing(1);
-                f.render_widget(table, chunks[1]);
+                if let Some(layer_list) = &wms.capability.layer {
+                  let items = layer_list.layers.iter().map(|l| Text::raw(&l.title));
+
+                  let list = List::new(items)
+                    .block(
+                      Block::default()
+                        .title(&wms.service.title)
+                        .borders(Borders::ALL),
+                    )
+                    .style(Style::default().fg(Color::White))
+                    .highlight_style(Style::default().modifier(Modifier::ITALIC))
+                    .highlight_symbol(">>");
+
+                  f.render_widget(list, horiz_chunks[0]);
+
+                  let row_style = Style::default().fg(Color::White);
+                  let table = Table::new(
+                    ["Name", "SRS", "BBox", "BBox (Lat Lon)"].into_iter(),
+                    vec![Row::Data(["A", "B", "C", "D"].into_iter())].into_iter(),
+                  )
+                  .header_style(
+                    Style::default()
+                      .fg(Color::Yellow)
+                      .modifier(Modifier::UNDERLINED),
+                  )
+                  .widths(&[
+                    Constraint::Percentage(25),
+                    Constraint::Percentage(25),
+                    Constraint::Percentage(25),
+                    Constraint::Percentage(25),
+                  ])
+                  .style(Style::default().fg(Color::White))
+                  .column_spacing(1);
+                  f.render_widget(table, horiz_chunks[1]);
+                } else {
+                  f.render_widget(Block::default().title("No layers"), horiz_chunks[0]);
+                }
               })
               .unwrap();
             match rx.recv().unwrap() {
@@ -125,15 +135,14 @@ async fn main() -> Result<(), String> {
                     terminal.backend_mut(),
                     LeaveAlternateScreen,
                     DisableMouseCapture
-                  ).unwrap();
+                  )
+                  .unwrap();
                   terminal.show_cursor().unwrap();
                   break;
                 }
                 _ => {}
               },
-              Event::Tick => {
-
-              }
+              Event::Tick => {}
             }
           }
         }
