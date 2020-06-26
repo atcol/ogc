@@ -1,6 +1,7 @@
 /// Web Mapping Service support, v1.3.0.
 use async_trait::async_trait;
 use serde_xml_rs::from_reader;
+use std::fs::read_to_string;
 
 /// Generic behaviour for a Web Mapping Service endpoint
 #[async_trait]
@@ -25,7 +26,7 @@ pub struct WebMappingService {
 impl WebMappingService {
 
   // Use the raw XML string as this "endpoint" for service calls
-  fn from_string(xml: String) -> Self {
+  pub fn from_string(xml: String) -> Self {
     WebMappingService {
       version: "1.3.0".to_string(),
       url: None,
@@ -34,7 +35,7 @@ impl WebMappingService {
   }
 
   // Use the given URL as the endpoint for service calls
-  fn from_url(url: String) -> Self {
+  pub fn from_url(url: String) -> Self {
     WebMappingService {
       version: "1.3.0".to_string(),
       url: Some(url),
@@ -67,23 +68,6 @@ impl Wms for WebMappingService {
         },
     }
   }
-
-  ///// Read the file at `p` and parse as a WMS GetCapabilities response
-  //async fn get_capabilities_path(p: PathBuf) -> Result<GetCapabilities, std::io::Error> {
-  //  match p.into_os_string().to_str() {
-  //    Some(path) => read_to_string(path)
-  //      .and_then(|xml_str| self.from_string(xml_str))
-  //      .and_then(|wms| wms.get_capabilities())
-  //      .or(Err(Error::new(
-  //        ErrorKind::InvalidData,
-  //        "Failed to parse as GetCapabilities",
-  //      ))),
-  //    None => Err(Error::new(
-  //      ErrorKind::InvalidInput,
-  //      "Could not convert to path",
-  //    )),
-  //  }
-  //}
 }
 
 #[derive(Debug, Default, PartialEq, Deserialize, Serialize)]
