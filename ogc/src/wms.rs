@@ -98,8 +98,8 @@ impl Wms for WebMappingService {
       .query(&[
         ("REQUEST", "GetMap"),
         ("VERSION", &req.version),
-        ("LAYERS", &req.to_csv()),
-        ("STYLES", &req.styles.join(",")),
+        ("LAYERS", &req.layers_to_csv()),
+        ("STYLES", &req.styles_to_csv()),
         ("SRS", &req.srs),
         ("BBOX", &req.bbox.to_str()),
         ("WIDTH", &req.width.to_string()),
@@ -278,11 +278,19 @@ pub struct GetMapParameters {
 }
 
 impl GetMapParameters {
-  fn to_csv(&self) -> String {
+  fn layers_to_csv(&self) -> String {
     if self.layers.len() > 1 {
       self.layers.join(",")
     } else {
       self.layers[0].clone()
+    }
+  }
+
+  fn styles_to_csv(&self) -> String {
+    if self.styles.len() > 1 {
+      self.styles.join(",")
+    } else {
+      self.styles[0].clone()
     }
   }
 }
@@ -383,7 +391,6 @@ mod tests {
     };
     let url = "http://giswebservices.massgis.state.ma.us/geoserver/wms".to_string();
     let get_map_res = WebMappingService::from_url(url).get_map(params).await;
-    println!("GetMap test result: {:?}", get_map_res);
     assert!(get_map_res.is_ok());
     match get_map_res {
       Ok(bytes) => {
