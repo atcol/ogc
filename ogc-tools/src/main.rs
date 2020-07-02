@@ -2,8 +2,8 @@ extern crate clap;
 extern crate prettytable;
 extern crate reqwest;
 use clap::Clap;
-use ogc::wms::{WebMappingService, Wms};
-use prettytable::{cell, row, Table};
+use ogc::wms::{Layer, LayerList, WebMappingService, Wms};
+use prettytable::{cell, row, Row, Table};
 
 #[derive(Clap)]
 #[clap(version = "1.0", author = "Alex Collins <grampz@pm.me>")]
@@ -35,24 +35,9 @@ async fn main() -> Result<(), String> {
         .await
       {
         Ok(capa) => {
-          // Create the table
-          let mut table = Table::new();
 
-          table.add_row(row!["Name", "SRS"]);
           if let Some(top_layer) = capa.capability.layer {
-            for layer in top_layer.layers {
-              let srs = if !layer.srs.is_empty() {
-                layer.srs
-              } else {
-                top_layer
-                  .srs
-                  .get(0)
-                  .unwrap_or(&"EPSG:4326".to_string())
-                  .to_string()
-              };
-              table.add_row(row![layer.name, srs]);
-            }
-            table.printstd();
+            print_layers(top_layer);
           } else {
             println!("No layers available");
           }
@@ -66,4 +51,30 @@ async fn main() -> Result<(), String> {
       }
     }
   }
+}
+
+fn print_layers(top_layer: LayerList) {
+    let mut table = Table::new();
+    table.add_row(row!["Name", "SRS"]);
+    for layer in top_layer.layers {
+        let srs = if !layer.srs.is_empty() {
+            layer.srs
+        } else {
+            "?".to_string() //top_layer
+                //.srs
+                //.get(0)
+                //.unwrap_or(&"EPSG:4326".to_string())
+                //.to_string()
+        };
+
+        table.add_row(row![layer.name, srs]);
+
+        if !layer.layers.is_empty() {
+            println!("HERE: {}", layer.name);
+            for l in layer.layers {
+                table.add_row(row![format!("- {}", l.name), srs]);
+            }
+        }
+    }
+    table.printstd();
 }

@@ -8,7 +8,7 @@
 //! async fn main() -> Result<(), String> {
 //!   let url =
 //!   "http://giswebservices.massgis.state.ma.us/geoserver/wms?request=GetCapabilities&service=WMS&version=1.3.0".to_string();
-//!   let capa = WebMappingService::from_url(url.clone())
+//!   let capa = WebMappingService::from_url(url.clone()).unwrap()
 //!         .get_capabilities().await.expect("Failure during GetCapabilities call");
 //!   assert_eq!(capa.service.name, "WMS");
 //!   assert_eq!(capa.service.title, "Massachusetts Data from MassGIS (GeoServer)");
@@ -24,10 +24,36 @@
 //!  * WIDTH
 //!  * HEIGHT
 //!  * FORMAT
+//! 
+//! e.g.:
+//! ```
+//! use ogc::wms::{BoundingBox, GetMapParameters, Wms, WebMappingService};
+//! use std::fs::File;
+//! use std::io::Write;
+//! #[tokio::main]
+//! async fn main() {
+//!   let url = "https://ows.terrestris.de/osm/service?";
+//!   let bytes = WebMappingService::from_url(url.to_string()).unwrap().get_map(
+//!     GetMapParameters { 
+//!       layers: vec!["OSM-WMS".to_string()],
+//!       srs: "EPSG:4326".to_string(),
+//!       bbox: BoundingBox {
+//!           srs: "EPSG:4326".to_string(),
+//!           minx: -180.0,
+//!           miny: -90.0,
+//!           maxx: 180.0,
+//!           maxy: 90.0,
+//!       },
+//!       ..GetMapParameters::default() 
+//!     }).await.unwrap();
+//!   assert_ne!(bytes.len(), 0);
+//!   let mut file = File::create("/tmp/terrestris-get-map.png").unwrap();
+//!   assert!(file.write_all(&bytes).is_ok());
+//! }
 use anyhow::Context;
 use async_trait::async_trait;
-use reqwest::Client;
 use serde_xml_rs::from_reader;
+use url::Url;
 
 /// Behaviour for a Web Mapping Service endpoint as per the specification.
 #[async_trait]
@@ -45,10 +71,10 @@ pub trait Wms {
 }
 
 /// A configurable WMS endpoint
-#[derive(Debug, Default, PartialEq, Deserialize, Serialize)]
+#[derive(Debug, Default, PartialEq)]
 pub struct WebMappingService {
   pub version: String,
-  url: Option<String>,
+  url: Option<Url>,
   raw_xml: Option<String>,
 }
 
@@ -63,12 +89,18 @@ impl WebMappingService {
   }
 
   /// Use the given URL as the endpoint for service calls
-  pub fn from_url(url: String) -> Self {
-    WebMappingService {
+  /// The URL should be the base URL for a WMS Service. Request parameters essential for
+  /// WMS requests will be replaced accordingly.
+  pub fn from_url(url: String) -> anyhow::Result<Self> {
+    let mut url = Url::parse(&url)?;
+    url.query_pairs_mut()
+        .append_pair("REQUEST", "GetCapabilities")
+        .append_pair("SERVICE", "WMS");
+    Ok(WebMappingService {
       version: "1.3.0".to_string(),
       url: Some(url),
       raw_xml: None,
-    }
+    })
   }
 }
 
@@ -76,8 +108,9 @@ impl WebMappingService {
 impl Wms for WebMappingService {
   /// The WMS GetCapabilities request
   async fn get_capabilities(&mut self) -> anyhow::Result<GetCapabilities> {
+    println!("GetCapa URL {:?}", self.url);
     match &self.raw_xml {
-      None => match reqwest::get(self.url.as_ref().unwrap()).await?.text().await {
+      None => match reqwest::get(self.url.clone().unwrap()).await?.text().await {
         Ok(xml) => {
           self.raw_xml = Some(xml);
           self.get_capabilities().await
@@ -92,27 +125,28 @@ impl Wms for WebMappingService {
   }
 
   async fn get_map(&mut self, req: GetMapParameters) -> anyhow::Result<bytes::Bytes> {
-    println!("{:?}", req);
-    let resp = Client::new()
-      .get(self.url.as_ref().unwrap())
-      .query(&[
-        ("REQUEST", "GetMap"),
-        ("VERSION", &req.version),
-        ("LAYERS", &req.layers_to_csv()),
-        ("STYLES", &req.styles_to_csv()),
-        ("SRS", &req.srs),
-        ("BBOX", &req.bbox.to_str()),
-        ("WIDTH", &req.width.to_string()),
-        ("HEIGHT", &req.height.to_string()),
-        ("FORMAT", &req.format),
-        //("TRANSPARENT": Option<bool>),
+    let mut url = self.url.clone().unwrap();
+    url.query_pairs_mut()
+        .clear()
+        .append_pair("REQUEST", "GetMap")
+        .append_pair("VERSION", &req.version)
+        .append_pair("LAYERS", &req.layers_to_csv())
+        .append_pair("STYLES", &req.styles_to_csv())
+        .append_pair("SRS", &req.srs)
+        .append_pair("CRS", &req.srs)
+        .append_pair("BBOX", &req.bbox.to_str())
+        .append_pair("WIDTH", &req.width.to_string())
+        .append_pair("HEIGHT", &req.height.to_string())
+        .append_pair("FORMAT", &req.format)
+        .append_pair(
+          "TRANSPARENT",
+          &req.transparent.unwrap_or(true).to_string().to_uppercase(),
+        );
         //("BG_COLOR": Option<String>),
         //("EXCEPTIONS": Option<String>),
         //("TIME": Option<String>),
         //("ELEVATION": Option<String>),
-      ])
-      .send()
-      .await?;
+    let resp = reqwest::get(url).await?;
     match resp.status() {
       reqwest::StatusCode::OK => {
         if let Some(ct_type) = resp.headers().get("Content-Type") {
@@ -204,6 +238,8 @@ pub struct Layer {
   pub srs: String,
   #[serde(rename = "Title", default)]
   pub title: String,
+  #[serde(rename = "Layer", default)]
+  pub layers: Vec<Layer>,
 }
 
 #[derive(Debug, Default, PartialEq, Deserialize, Serialize)]
@@ -250,31 +286,31 @@ pub struct GetCapabilities {
 #[derive(Debug, PartialEq, Deserialize, Serialize)]
 pub struct GetMapParameters {
   /// Request version.  
-  version: String,
+  pub version: String,
   /// Comma-separated list of one or more map layers. Optional if SLD parameter is present.
-  layers: Vec<String>,
+  pub layers: Vec<String>,
   /// Comma-separated list of one rendering style per requested layer. Optional if SLD parameter is present.
-  styles: Vec<String>,
+  pub styles: Vec<String>,
   /// namespace:identifier - Spatial Reference System.
-  srs: String,
+  pub srs: String,
   /// minx,miny,maxx,maxy R Bounding box corners (lower left, upper right) in SRS units.
-  bbox: BoundingBox,
+  pub bbox: BoundingBox,
   /// Width in pixels of map picture.  
-  width: u16,
+  pub width: u16,
   /// Height in pixels of map picture.
-  height: u16,
+  pub height: u16,
   /// Output format of map.
-  format: String,
+  pub format: String,
   /// Background transparency of map (default=FALSE).
-  transparent: Option<bool>,
+  pub transparent: Option<bool>,
   /// Red-green-blue color value for the background color (default=0xFFFFFF).
-  bg_color: Option<String>,
+  pub bg_color: Option<String>,
   /// The format in which exceptions are to be reported by the WMS (default=SE_XML).
-  exceptions: Option<String>,
+  pub exceptions: Option<String>,
   /// Time value of layer desired.
-  time: Option<String>,
+  pub time: Option<String>,
   /// Elevation of layer desired.
-  elevation: Option<String>,
+  pub elevation: Option<String>,
 }
 
 impl GetMapParameters {
@@ -287,10 +323,10 @@ impl GetMapParameters {
   }
 
   fn styles_to_csv(&self) -> String {
-    if self.styles.len() > 1 {
-      self.styles.join(",")
-    } else {
-      self.styles[0].clone()
+    match self.styles.len() {
+      0 => "".to_string(),
+      1 => self.styles.join(","),
+      _ => self.styles[0].clone(),
     }
   }
 }
@@ -318,7 +354,7 @@ impl Default for GetMapParameters {
 #[cfg(test)]
 mod tests {
   use crate::wms::{
-    BoundingBox, GetCapabilities, GetMapParameters, Service, WebMappingService, Wms,
+    BoundingBox, GetCapabilities, GetMapParameters, WebMappingService, Wms,
   };
   use std::fs::read_to_string;
   use std::fs::File;
@@ -369,36 +405,29 @@ mod tests {
     //<BoundingBox CRS="CRS:84"
     //minx="-71.63" miny="41.75" maxx="-70.78" maxy="42.90" resx="0.01" resy="0.01"/>
     let params = GetMapParameters {
-      version: "1.3.0".to_string(),
-      layers: vec!["massgis_dep_21e_mcp".to_string()],
-      styles: Vec::new(),
-      srs: "EPSG:26986".to_string(),
+      layers: vec!["OSM-WMS".to_string()],
+      srs: "EPSG:4326".to_string(),
       bbox: BoundingBox {
-        srs: "EPSG:26986".to_string(),
-        minx: -71.63,
-        miny: 41.75,
-        maxx: -70.78,
-        maxy: 42.90,
+        srs: "EPSG:4326".to_string(),
+        minx: -180.0,
+        miny: -90.0,
+        maxx: 180.0,
+        maxy: 90.0,
       },
-      width: 250,
-      height: 250,
-      format: "image/png".to_string(),
-      transparent: None,
-      bg_color: None,
-      exceptions: None,
-      time: None,
-      elevation: None,
+      ..GetMapParameters::default()
     };
-    let url = "http://giswebservices.massgis.state.ma.us/geoserver/wms".to_string();
-    let get_map_res = WebMappingService::from_url(url).get_map(params).await;
-    assert!(get_map_res.is_ok());
+    let url = "http://ows.mundialis.de/services/service?SERVICE=WMS&REQUEST=GetCapabilities&VERSION=1.3.0".to_string();
+    let get_map_res = WebMappingService::from_url(url).unwrap().get_map(params).await;
     match get_map_res {
       Ok(bytes) => {
         assert_ne!(bytes.len(), 0);
         let mut file = File::create("/tmp/test-get-map.png").unwrap();
         assert!(file.write_all(&bytes).is_ok());
       }
-      Err(e) => panic!(e),
+      Err(e) => {
+        println!("GetMap failure {:?}", e);
+        panic!(e);
+      }
     }
   }
 
