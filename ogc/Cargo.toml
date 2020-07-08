@@ -8,7 +8,7 @@ license = "MIT"
 name = "ogc"
 readme = "../README.md"
 repository = "https://gitlab.com/atc-/ogc/"
-version = "0.4.0"
+version = "0.4.1"
 
 [dependencies]
 async-trait = "0.1.36"

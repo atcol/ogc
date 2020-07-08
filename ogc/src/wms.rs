@@ -24,7 +24,7 @@
 //!  * WIDTH
 //!  * HEIGHT
 //!  * FORMAT
-//! 
+//!
 //! e.g.:
 //! ```
 //! use ogc::wms::{BoundingBox, GetMapParameters, Wms, WebMappingService};
@@ -34,7 +34,7 @@
 //! async fn main() {
 //!   let url = "https://ows.terrestris.de/osm/service?";
 //!   let bytes = WebMappingService::from_url(url.to_string()).unwrap().get_map(
-//!     GetMapParameters { 
+//!     GetMapParameters {
 //!       layers: vec!["OSM-WMS".to_string()],
 //!       srs: "EPSG:4326".to_string(),
 //!       bbox: BoundingBox {
@@ -44,7 +44,7 @@
 //!           maxx: 180.0,
 //!           maxy: 90.0,
 //!       },
-//!       ..GetMapParameters::default() 
+//!       ..GetMapParameters::default()
 //!     }).await.unwrap();
 //!   assert_ne!(bytes.len(), 0);
 //!   let mut file = File::create("/tmp/terrestris-get-map.png").unwrap();
@@ -53,6 +53,7 @@
 use anyhow::Context;
 use async_trait::async_trait;
 use serde_xml_rs::from_reader;
+use std::collections::HashSet;
 use url::Url;
 
 /// Behaviour for a Web Mapping Service endpoint as per the specification.
@@ -71,7 +72,7 @@ pub trait Wms {
 }
 
 /// A configurable WMS endpoint
-#[derive(Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct WebMappingService {
   pub version: String,
   url: Option<Url>,
@@ -93,9 +94,10 @@ impl WebMappingService {
   /// WMS requests will be replaced accordingly.
   pub fn from_url(url: String) -> anyhow::Result<Self> {
     let mut url = Url::parse(&url)?;
-    url.query_pairs_mut()
-        .append_pair("REQUEST", "GetCapabilities")
-        .append_pair("SERVICE", "WMS");
+    url
+      .query_pairs_mut()
+      .append_pair("REQUEST", "GetCapabilities")
+      .append_pair("SERVICE", "WMS");
     Ok(WebMappingService {
       version: "1.3.0".to_string(),
       url: Some(url),
@@ -108,7 +110,6 @@ impl WebMappingService {
 impl Wms for WebMappingService {
   /// The WMS GetCapabilities request
   async fn get_capabilities(&mut self) -> anyhow::Result<GetCapabilities> {
-    println!("GetCapa URL {:?}", self.url);
     match &self.raw_xml {
       None => match reqwest::get(self.url.clone().unwrap()).await?.text().await {
         Ok(xml) => {
@@ -126,26 +127,27 @@ impl Wms for WebMappingService {
 
   async fn get_map(&mut self, req: GetMapParameters) -> anyhow::Result<bytes::Bytes> {
     let mut url = self.url.clone().unwrap();
-    url.query_pairs_mut()
-        .clear()
-        .append_pair("REQUEST", "GetMap")
-        .append_pair("VERSION", &req.version)
-        .append_pair("LAYERS", &req.layers_to_csv())
-        .append_pair("STYLES", &req.styles_to_csv())
-        .append_pair("SRS", &req.srs)
-        .append_pair("CRS", &req.srs)
-        .append_pair("BBOX", &req.bbox.to_str())
-        .append_pair("WIDTH", &req.width.to_string())
-        .append_pair("HEIGHT", &req.height.to_string())
-        .append_pair("FORMAT", &req.format)
-        .append_pair(
-          "TRANSPARENT",
-          &req.transparent.unwrap_or(true).to_string().to_uppercase(),
-        );
-        //("BG_COLOR": Option<String>),
-        //("EXCEPTIONS": Option<String>),
-        //("TIME": Option<String>),
-        //("ELEVATION": Option<String>),
+    url
+      .query_pairs_mut()
+      .clear()
+      .append_pair("REQUEST", "GetMap")
+      .append_pair("VERSION", &req.version)
+      .append_pair("LAYERS", &req.layers_to_csv())
+      .append_pair("STYLES", &req.styles_to_csv())
+      .append_pair("SRS", &req.srs)
+      .append_pair("CRS", &req.srs)
+      .append_pair("BBOX", &req.bbox.to_str())
+      .append_pair("WIDTH", &req.width.to_string())
+      .append_pair("HEIGHT", &req.height.to_string())
+      .append_pair("FORMAT", &req.format)
+      .append_pair(
+        "TRANSPARENT",
+        &req.transparent.unwrap_or(true).to_string().to_uppercase(),
+      );
+    //("BG_COLOR": Option<String>),
+    //("EXCEPTIONS": Option<String>),
+    //("TIME": Option<String>),
+    //("ELEVATION": Option<String>),
     let resp = reqwest::get(url).await?;
     match resp.status() {
       reqwest::StatusCode::OK => {
@@ -184,11 +186,11 @@ impl Wms for WebMappingService {
   }
 }
 
-#[derive(Debug, Default, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, PartialEq, Deserialize, Serialize)]
 pub struct GetFeatureInfo {}
 
 /// General service metadata
-#[derive(Debug, Default, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, PartialEq, Deserialize, Serialize)]
 pub struct Service {
   #[serde(rename = "Abstract", default)]
   pub abstr: String,
@@ -203,27 +205,13 @@ pub struct Service {
 }
 
 /// The root element
-#[derive(Debug, Default, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, PartialEq, Deserialize, Serialize)]
 pub struct Capability {
   #[serde(rename = "Layer", default)]
-  pub layer: Option<LayerList>,
+  pub layer: Option<Layer>,
 }
 
-#[derive(Debug, Default, PartialEq, Deserialize, Serialize)]
-pub struct LayerList {
-  #[serde(rename = "Abstract", default)]
-  pub abstr: String,
-  #[serde(rename = "Layer", default)]
-  pub layers: Vec<Layer>,
-  #[serde(rename = "Name", default)]
-  pub name: String,
-  #[serde(rename = "SRS", default)]
-  pub srs: Vec<String>,
-  #[serde(rename = "Title", default)]
-  pub title: String,
-}
-
-#[derive(Debug, Default, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, PartialEq, Deserialize, Serialize)]
 pub struct Layer {
   #[serde(rename = "Abstract", default)]
   pub abstr: String,
@@ -234,15 +222,26 @@ pub struct Layer {
   pub bbox: Vec<BoundingBox>,
   #[serde(rename = "Name", default)]
   pub name: String,
+  #[serde(rename = "CRS", default)]
+  crs: HashSet<String>,
   #[serde(rename = "SRS", default)]
-  pub srs: String,
+  srs: HashSet<String>, // 1.1.0 compat
   #[serde(rename = "Title", default)]
   pub title: String,
   #[serde(rename = "Layer", default)]
   pub layers: Vec<Layer>,
 }
 
-#[derive(Debug, Default, PartialEq, Deserialize, Serialize)]
+impl Layer {
+  pub fn crs(&self) -> HashSet<String> {
+    let mut combined_crs = HashSet::new();
+    combined_crs.extend(self.crs.clone());
+    combined_crs.extend(self.srs.clone());
+    combined_crs
+  }
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Deserialize, Serialize)]
 pub struct LatLonBoundingBox {
   pub minx: f32,
   pub miny: f32,
@@ -250,7 +249,7 @@ pub struct LatLonBoundingBox {
   pub maxy: f32,
 }
 
-#[derive(Debug, Default, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, PartialEq, Deserialize, Serialize)]
 pub struct BoundingBox {
   pub minx: f32,
   pub miny: f32,
@@ -268,13 +267,13 @@ impl BoundingBox {
   }
 }
 
-#[derive(Debug, Default, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, PartialEq, Deserialize, Serialize)]
 pub struct ScaleHint {
   pub min: f32,
   pub max: f32,
 }
 
-#[derive(Debug, Default, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, PartialEq, Deserialize, Serialize)]
 pub struct GetCapabilities {
   #[serde(rename = "Service", default)]
   pub service: Service,
@@ -283,7 +282,7 @@ pub struct GetCapabilities {
 }
 
 /// The parameters for a GetMap service request, as per [the WMS test data spec](http://cite.opengeospatial.org/OGCTestData/wms/1.1.1/spec/wms1.1.1.html#wmsops.getmap).
-#[derive(Debug, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 pub struct GetMapParameters {
   /// Request version.  
   pub version: String,
@@ -353,9 +352,7 @@ impl Default for GetMapParameters {
 
 #[cfg(test)]
 mod tests {
-  use crate::wms::{
-    BoundingBox, GetCapabilities, GetMapParameters, WebMappingService, Wms,
-  };
+  use crate::wms::{BoundingBox, GetCapabilities, GetMapParameters, WebMappingService, Wms};
   use std::fs::read_to_string;
   use std::fs::File;
   use std::io::Write;
@@ -416,8 +413,13 @@ mod tests {
       },
       ..GetMapParameters::default()
     };
-    let url = "http://ows.mundialis.de/services/service?SERVICE=WMS&REQUEST=GetCapabilities&VERSION=1.3.0".to_string();
-    let get_map_res = WebMappingService::from_url(url).unwrap().get_map(params).await;
+    let url =
+      "http://ows.mundialis.de/services/service?SERVICE=WMS&REQUEST=GetCapabilities&VERSION=1.3.0"
+        .to_string();
+    let get_map_res = WebMappingService::from_url(url)
+      .unwrap()
+      .get_map(params)
+      .await;
     match get_map_res {
       Ok(bytes) => {
         assert_ne!(bytes.len(), 0);
@@ -425,7 +427,6 @@ mod tests {
         assert!(file.write_all(&bytes).is_ok());
       }
       Err(e) => {
-        println!("GetMap failure {:?}", e);
         panic!(e);
       }
     }
@@ -456,6 +457,8 @@ mod tests {
     let xml = read_to_string("./examples/WMS-1.3.0.xml").unwrap();
     let mut wms_opt = WebMappingService::from_string(xml);
     let get_capa = wms_opt.get_capabilities().await.unwrap();
+    let top_layer = get_capa.capability.clone().layer.unwrap();
+    assert_eq!(top_layer.title, "Acme Corp. Map Server");
     verify_parse(get_capa, ParseExpectation {
         service_name: "WMS".to_string(),
         service_title: "Acme Corp. Map Server".to_string(),
@@ -469,7 +472,26 @@ mod tests {
   }
 
   #[tokio::test]
-  async fn test_boundingbox() {
+  async fn test_get_crs_layer() {
+    let xml = read_to_string("./examples/WMS-1.3.0.xml").unwrap();
+    let mut wms_opt = WebMappingService::from_string(xml);
+    let gc = wms_opt.get_capabilities().await.unwrap();
+    let layer_list = gc.capability.layer.unwrap();
+    let mut ct = 1;
+    for layer in layer_list.layers.iter() {
+      ct += layer.crs().len();
+      if layer.layers.len() > 0 {
+        for i_layer in layer.layers.iter() {
+          println!("Layer is {:?} {:?}", i_layer.title, i_layer.crs());
+          ct += i_layer.crs().len();
+        }
+      }
+    }
+    assert_eq!(ct, 3);
+  }
+
+  #[test]
+  fn test_boundingbox() {
     let bbox = BoundingBox {
       srs: "EPSG:26986".to_string(),
       minx: -71.63,

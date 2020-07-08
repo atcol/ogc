@@ -1,9 +1,10 @@
 extern crate clap;
 extern crate prettytable;
 extern crate reqwest;
+use anyhow::*;
 use clap::Clap;
-use ogc::wms::{Layer, LayerList, WebMappingService, Wms};
-use prettytable::{cell, row, Row, Table};
+use ogc::wms::{Layer, WebMappingService, Wms};
+use prettytable::{cell, row, table, Table};
 
 #[derive(Clap)]
 #[clap(version = "1.0", author = "Alex Collins <grampz@pm.me>")]
@@ -26,16 +27,12 @@ struct ShowCmd {
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-  //execute!(stdout(), EnterAlternateScreen).unwrap();
   let args: Args = Args::parse();
   match args.subcmd {
     SubCommand::Show(w) => {
-      match WebMappingService::from_url(w.url.clone())
-        .get_capabilities()
-        .await
-      {
+      let mut wms = WebMappingService::from_url(w.url.clone()).unwrap();
+      match wms.get_capabilities().await {
         Ok(capa) => {
-
           if let Some(top_layer) = capa.capability.layer {
             print_layers(top_layer);
           } else {
@@ -45,7 +42,7 @@ async fn main() -> Result<(), String> {
           Ok(())
         }
         Err(e) => {
-          println!("Failed to talk to WMS URL {}: {}", w.url, e);
+          println!("Failed to talk to WMS {}: {}", w.url, e);
           Err(format!("{:?}", e))
         }
       }
@@ -53,28 +50,30 @@ async fn main() -> Result<(), String> {
   }
 }
 
-fn print_layers(top_layer: LayerList) {
-    let mut table = Table::new();
-    table.add_row(row!["Name", "SRS"]);
-    for layer in top_layer.layers {
-        let srs = if !layer.srs.is_empty() {
-            layer.srs
-        } else {
-            "?".to_string() //top_layer
-                //.srs
-                //.get(0)
-                //.unwrap_or(&"EPSG:4326".to_string())
-                //.to_string()
-        };
+fn print_layers(top_layer: Layer) {
+  let top_layer_crs = top_layer.crs();
+  let mut top_table = table!(["Shared CRS"]);
+  for g_crs in top_layer.crs() {
+    top_table.add_row(row![g_crs]);
+  }
 
-        table.add_row(row![layer.name, srs]);
+  top_table.printstd();
 
-        if !layer.layers.is_empty() {
-            println!("HERE: {}", layer.name);
-            for l in layer.layers {
-                table.add_row(row![format!("- {}", l.name), srs]);
-            }
-        }
+  let mut table = Table::new();
+  table.add_row(row!["Name", "CRS"]);
+  for layer in top_layer.layers {
+    let l_crs = layer.crs();
+    let crs_list = l_crs.difference(&top_layer_crs);
+
+    let mut crs_str = String::new();
+    for crs in crs_list {
+      crs_str.push_str(",");
+      crs_str.push_str(crs.as_str());
     }
-    table.printstd();
+    crs_str = crs_str.chars().skip(1).collect::<String>();
+    table.add_row(row![layer.name, crs_str]);
+
+    //TODO recurse layers
+  }
+  table.printstd();
 }
