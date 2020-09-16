@@ -1,8 +1,11 @@
 extern crate clap;
+extern crate colored;
 extern crate prettytable;
 extern crate reqwest;
 use anyhow::*;
 use clap::Clap;
+use colored::*;
+use epsg::references::get_crs;
 use ogc::wms::{Layer, WebMappingService, Wms};
 use prettytable::{cell, row, table, Table};
 
@@ -52,12 +55,10 @@ async fn main() -> Result<(), String> {
 
 fn print_layers(top_layer: Layer) {
   let top_layer_crs = top_layer.crs();
-  let mut top_table = table!(["Shared CRS"]);
-  for g_crs in top_layer.crs() {
-    top_table.add_row(row![g_crs]);
+  println!("{}", "Shared CRS".underline());
+  for shared_crs in &top_layer_crs {
+    println!("{} - {}", shared_crs.bold(), get_crs(shared_crs).map(|x| x.coord_ref_sys_name).unwrap_or(""));
   }
-
-  top_table.printstd();
 
   let mut table = Table::new();
   table.add_row(row!["Name", "CRS"]);

@@ -143,11 +143,12 @@ impl Wms for WebMappingService {
       .append_pair(
         "TRANSPARENT",
         &req.transparent.unwrap_or(true).to_string().to_uppercase(),
-      );
-    //("BG_COLOR": Option<String>),
-    //("EXCEPTIONS": Option<String>),
-    //("TIME": Option<String>),
-    //("ELEVATION": Option<String>),
+      )
+      .append_pair("BG_COLOR", &req.bg_color.unwrap_or("".to_string()))
+      .append_pair("EXCEPTIONS", &req.exceptions.unwrap_or("".to_string()))
+      .append_pair("TIME", &req.time.unwrap_or("".to_string()))
+      .append_pair("ELEVATION", &req.elevation.unwrap_or("".to_string()));
+
     let resp = reqwest::get(url).await?;
     match resp.status() {
       reqwest::StatusCode::OK => {

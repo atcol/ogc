@@ -1,5 +1,5 @@
 [package]
-authors = ["Alex <grampz@pm.me>"]
+authors = ["Alex Collins"]
 description = "Models, APIs and Tools for working with Open Geospatial Consortium (OGC) technologies"
 edition = "2018"
 homepage = "https://gitlab.com/atc-/ogc"
@@ -21,3 +21,4 @@ reqwest = "0.10.6"
 tokio = { version = "0.2", features = ["full"] }
 bytes = "0.5.5"
 url = "2.1.1"
+epsg = "0.1.0"
