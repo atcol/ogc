@@ -1,5 +1,5 @@
 [package]
-authors = ["Alex Collins"]
+authors = ["Alex Collins <grampz@pm.me>"]
 description = "Models, APIs and Tools for working with Open Geospatial Consortium (OGC) technologies"
 edition = "2018"
 homepage = "https://github.com/atcol/ogc"
