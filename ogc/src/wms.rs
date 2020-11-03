@@ -53,7 +53,7 @@
 use anyhow::Context;
 use async_trait::async_trait;
 use serde_xml_rs::from_reader;
-use std::collections::HashSet;
+use std::{collections::HashSet};
 use url::Url;
 
 /// Behaviour for a Web Mapping Service endpoint as per the specification.
@@ -158,7 +158,7 @@ impl Wms for WebMappingService {
               .bytes()
               .await
               .ok()
-              .context("Failed to stream bytes for GetMap response")
+              .context("Failed to stream image data")
           } else if ct_type.to_str().unwrap().contains("/xml") {
             Err(anyhow::Error::msg(format!(
               "Exception response for GetMap: {:?}",
@@ -172,11 +172,12 @@ impl Wms for WebMappingService {
           }
         } else {
           // Best guess...
-          resp
-            .bytes()
-            .await
-            .ok()
-            .context("Failed to stream bytes for GetMap response")
+          // resp
+          //   .bytes()
+          //   .await
+          //   .ok()
+          //   .context("Failed to stream bytes for GetMap response")
+          panic!("TODO2");
         }
       }
       _ => {

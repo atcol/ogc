@@ -3,6 +3,14 @@ DIR_RELEASE   := ${DIR_BUILD}/release
 BIN_NAME      := "!set_this!"
 .DEFAULT_GOAL := all
 
+ifdef $(INIT_PROJ)
+	wget http://launchpadlibrarian.net/486729287/libproj19_7.1.0-1_amd64.deb
+	wget http://launchpadlibrarian.net/486729286/proj-data_7.1.0-1_all.deb
+	wget http://launchpadlibrarian.net/486729288/proj-bin_7.1.0-1_amd64.deb
+	dpkg -i *.deb
+	apt-get install libtiff-dev libsqlite3-dev
+endif
+
 .PHONY: all
 all : build test
 
