@@ -24,3 +24,6 @@ serde_json = "1.0.59"
 geo-types = "0.6.1"
 geojson = { version = "0.20.1", features = ["geo-types"] }
 proj = { version = "0.20.5", features = ["network"] }
+strum_macros = "0.19.4"
+strum = "0.19.5"
+

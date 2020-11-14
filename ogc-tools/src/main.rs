@@ -2,8 +2,8 @@ extern crate clap;
 extern crate colored;
 extern crate prettytable;
 extern crate reqwest;
-use std::convert::TryInto;
-use geo_types::Line;
+extern crate strum;
+extern crate strum_macros;
 use anyhow::*;
 use clap::Clap;
 use colored::*;
@@ -15,6 +15,7 @@ use proj::{Proj};
 use shapefile::{Reader, Shape};
 use std::convert::TryFrom;
 use std::io::prelude::*;
+use strum_macros::EnumString;
 
 #[derive(Clap)]
 #[clap(version = "1.0", author = "Alex Collins <grampz@pm.me>")]
@@ -51,6 +52,18 @@ struct ShowCmd {
   /// The URL to read
   #[clap(short, long)]
   url: String,
+
+  /// What data to select from the endpoint
+  #[clap(short, long)]
+  select: Option<Selection>,
+}
+
+/// What to show
+#[derive(Clap, EnumString, PartialEq)]
+enum Selection {
+  All,
+  Layers,
+  CRS,
 }
 
 #[tokio::main]
@@ -62,7 +75,23 @@ async fn main() -> Result<(), String> {
       match wms.get_capabilities().await {
         Ok(capa) => {
           if let Some(top_layer) = capa.capability.layer {
-            print_layers(top_layer);
+            //FIXME extract to printing strategy for more complex "picks" of data
+            let selection = w.select.unwrap_or(Selection::All);
+            if selection == Selection::All || selection == Selection::CRS {
+              println!("{}", "Shared CRS".underline());
+              for shared_crs in &top_layer.crs() {
+                println!(
+                  "{} - {}",
+                  shared_crs.bold(),
+                  get_crs(shared_crs)
+                    .map(|x| x.coord_ref_sys_name)
+                    .unwrap_or("")
+                );
+              }
+            }
+            if selection == Selection::All || selection == Selection::Layers {
+              print_table(top_layer);
+            }
           } else {
             println!("No layers available");
           }
@@ -73,7 +102,7 @@ async fn main() -> Result<(), String> {
           Err(format!("{:?}", e))
         }
       }
-    }
+    },
     SubCommand::Convert(cmd) => {
       let shapes = Reader::from_path(cmd.file.clone()).unwrap().into_iter();
       let (from_crs, to_crs) = (cmd.from_crs.clone(), cmd.to_crs.clone());
@@ -179,32 +208,23 @@ fn geometry_to_feature(shape_geom: geo_types::Geometry<f64>) -> Feature {
   }
 }
 
-fn print_layers(top_layer: Layer) {
-  let top_layer_crs = top_layer.crs();
-  println!("{}", "Shared CRS".underline());
-  for shared_crs in &top_layer_crs {
-    println!(
-      "{} - {}",
-      shared_crs.bold(),
-      get_crs(shared_crs)
-        .map(|x| x.coord_ref_sys_name)
-        .unwrap_or("")
-    );
-  }
-
+fn print_table(top_layer: Layer) {
+  // let top_layer_crs = top_layer.crs();
   let mut table = Table::new();
-  table.add_row(row!["Name", "CRS"]);
+  table.add_row(row!["Name".bold(), "Abstract".bold(), "Keywords".bold()]);
+  let mut abstr;
   for layer in top_layer.layers {
-    let l_crs = layer.crs();
-    let crs_list = l_crs.difference(&top_layer_crs);
-
-    let mut crs_str = String::new();
-    for crs in crs_list {
-      crs_str.push_str(",");
-      crs_str.push_str(crs.as_str());
-    }
-    crs_str = crs_str.chars().skip(1).collect::<String>();
-    table.add_row(row![layer.name, crs_str]);
+    // let l_crs = layer.crs();
+    // let crs_list = l_crs.symmetric_difference(&top_layer_crs);
+    // let mut crs_str = String::new();
+    // for crs in crs_list {
+    //   crs_str.push_str(",");
+    //   crs_str.push_str(crs.as_str());
+    // }
+    // crs_str = crs_str.chars().skip(1).collect::<String>();
+    abstr = layer.abstr.clone();
+    abstr.truncate(30);
+    table.add_row(row![layer.name, format!("{}...", abstr), format!("{:?}", layer.keyword_list.keyword.join(","))]);
 
     //TODO recurse layers
   }

@@ -53,7 +53,7 @@
 use anyhow::Context;
 use async_trait::async_trait;
 use serde_xml_rs::from_reader;
-use std::{collections::HashSet};
+use std::collections::HashSet;
 use url::Url;
 
 /// Behaviour for a Web Mapping Service endpoint as per the specification.
@@ -228,6 +228,10 @@ pub struct Layer {
   crs: HashSet<String>,
   #[serde(rename = "SRS", default)]
   srs: HashSet<String>, // 1.1.0 compat
+
+  #[serde(rename = "KeywordList", default)]
+  pub keyword_list: KeywordList, 
+
   #[serde(rename = "Title", default)]
   pub title: String,
   #[serde(rename = "Layer", default)]
@@ -235,12 +239,19 @@ pub struct Layer {
 }
 
 impl Layer {
+  /// The combined CRS values for this Layer
   pub fn crs(&self) -> HashSet<String> {
     let mut combined_crs = HashSet::new();
     combined_crs.extend(self.crs.clone());
     combined_crs.extend(self.srs.clone());
     combined_crs
   }
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Deserialize, Serialize)]
+pub struct KeywordList {
+  #[serde(rename = "Keyword", default)]
+  pub keyword: Vec<String>
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Deserialize, Serialize)]
@@ -273,6 +284,22 @@ impl BoundingBox {
 pub struct ScaleHint {
   pub min: f32,
   pub max: f32,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Deserialize, Serialize)]
+pub struct Style {
+  #[serde(rename = "Name", default)]
+  name: String,
+  #[serde(rename = "Title", default)]
+  title: String,
+  #[serde(rename = "Abstract", default)]
+  abstr: Option<String>,
+  #[serde(rename = "LegendURL", default)]
+  legend_url: Vec<String>,
+  #[serde(rename = "StyleSheetURL", default)]
+  style_sheet_url: Option<String>,
+  #[serde(rename = "StyleURL", default)]
+  style_url: Option<String>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Deserialize, Serialize)]
