@@ -90,7 +90,7 @@ async fn main() -> Result<(), String> {
               }
             }
             if selection == Selection::All || selection == Selection::Layers {
-              print_table(top_layer);
+              print_table(&top_layer);
             }
           } else {
             println!("No layers available");
@@ -208,12 +208,13 @@ fn geometry_to_feature(shape_geom: geo_types::Geometry<f64>) -> Feature {
   }
 }
 
-fn print_table(top_layer: Layer) {
-  // let top_layer_crs = top_layer.crs();
+fn print_table(top_layer: &Layer) {
+  print!("{}", top_layer.name.bold().underline());
   let mut table = Table::new();
   table.add_row(row!["Name".bold(), "Abstract".bold(), "Keywords".bold()]);
   let mut abstr;
-  for layer in top_layer.layers {
+  let mut keywords;
+  for layer in &top_layer.layers {
     // let l_crs = layer.crs();
     // let crs_list = l_crs.symmetric_difference(&top_layer_crs);
     // let mut crs_str = String::new();
@@ -224,9 +225,16 @@ fn print_table(top_layer: Layer) {
     // crs_str = crs_str.chars().skip(1).collect::<String>();
     abstr = layer.abstr.clone();
     abstr.truncate(30);
-    table.add_row(row![layer.name, format!("{}...", abstr), format!("{:?}", layer.keyword_list.keyword.join(","))]);
+    
+    keywords = layer.keyword_list.keyword.join(",");
+    keywords.truncate(30);
+    table.add_row(row![layer.name, format!("{}...", abstr), keywords]);
 
     //TODO recurse layers
+    if layer.layers.len() > 0 {
+      let layers = &layer.layers;
+      layers.into_iter().for_each(print_table);
+    }
   }
   table.printstd();
 }
