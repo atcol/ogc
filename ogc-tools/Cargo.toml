@@ -14,6 +14,10 @@ version = "0.3.0"
 name = "wms"
 path = "src/wms.rs"
 
+[[bin]]
+name = "geoconv"
+path = "src/geoconv.rs"
+
 [dependencies]
 ogc = { path = "../ogc", version= "0.6.0" }
 clap = "3.0.0-beta.2"
