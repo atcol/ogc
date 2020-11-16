@@ -24,3 +24,6 @@ Clone and build with cargo:
 
     $ cargo build --release
 
+### Disclaimer
+
+This project is not endorsed or affiliated with [OGC](https://www.ogc.org/).
