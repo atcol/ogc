@@ -3,8 +3,10 @@
 <div align="center">
     <strong>
       OGC <br/>
-      APIs and tools for working with common OGC datatypes and services.
     </strong>
+    <p>
+        APIs and tools for working with common OGC datatypes and services.
+    </p>
 </div>
 
 <br />
