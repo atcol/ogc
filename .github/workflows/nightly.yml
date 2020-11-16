@@ -54,6 +54,7 @@ jobs:
 
   test-mac-win:
     name: Test Rust ${{ matrix.rust }} on ${{ matrix.os }}
+    continue-on-error: true
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
