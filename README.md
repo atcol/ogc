@@ -1,9 +1,9 @@
 <br />
 
 <div align="center">
-    <strong>
+    <h1>
       OGC <br/>
-    </strong>
+    </h1>
     <p>
         APIs and tools for working with common OGC datatypes and services.
     </p>
