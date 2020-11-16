@@ -12,7 +12,7 @@
 <div align="center">
     <img alt="GitHub Actions - Stable
         src="https://github.com/atcol/ogc/workflows/Stable/badge.svg">
-    <img alt="GitHub Actions - Nightly
+    <img alt="GitHub Actions - Nightly"
         src="https://github.com/atcol/ogc/workflows/Nightly/badge.svg">
 </div>
 
