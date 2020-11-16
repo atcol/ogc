@@ -19,6 +19,18 @@ jobs:
     - name: Init Environment
       run: make init
     - name: Build
-      run: cargo build --verbose
+      run: cargo build --verbose --release
     - name: Run tests
       run: cargo test --verbose
+    - name: Upload WMS Artefact
+      uses: actions/upload-artifact@v2.2.1
+      with:
+        path: target/release/wms
+        if-no-files-found: error
+        retention-days: 90
+    - name: Upload Geoconv artefact
+      uses: actions/upload-artifact@v2.2.1
+      with:
+        path: target/release/geoconv
+        if-no-files-found: error
+        retention-days: 90
