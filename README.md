@@ -12,10 +12,10 @@
 <br />
 
 <div align="center">
-    <img alt="GitHub Actions - Nightly"
-        src="https://github.com/atcol/ogc/workflows/Nightly/badge.svg">
-    <img alt="OGC on docs.rs"
-        src="https://docs.rs/ogc/badge.svg" />
+    <a href="https://github.com/atcol/ogc/actions?query=workflow%3ANightly">
+        <img alt="GitHub Actions - Nightly" src="https://github.com/atcol/ogc/workflows/Nightly/badge.svg"></a>
+    <a href="https://docs.rs/ogc"><img alt="OGC on docs.rs"
+                                       src="https://docs.rs/ogc/badge.svg" /></a>
 </div>
 
 <br/>
