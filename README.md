@@ -5,7 +5,7 @@
       OGC <br/>
     </h1>
     <p>
-        APIs and tools for working with common OGC datatypes and services.
+         Types, APIs and tools for working with common OGC services & data.
     </p>
 </div>
 
@@ -14,6 +14,8 @@
 <div align="center">
     <img alt="GitHub Actions - Nightly"
         src="https://github.com/atcol/ogc/workflows/Nightly/badge.svg">
+    <img alt="OGC on docs.rs"
+        src="https://docs.rs/ogc/badge.svg" />
 </div>
 
 <br/>
