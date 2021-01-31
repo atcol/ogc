@@ -5,6 +5,7 @@ pkgs.stdenv.mkDerivation {
     pkgs.rustup pkgs.pkgconfig pkgs.glibc pkgs.zlib pkgs.openssl pkgs.libgit2
     pkgs.exa
     pkgs.ripgrep
+    pkgs.watchexec
     pkgs.tokei
     pkgs.bat
     pkgs.fd
@@ -14,6 +15,7 @@ pkgs.stdenv.mkDerivation {
   shellHook = ''
     export NIX_ENFORCE_PURITY=0
     alias ls=exa
+    alias find=fd
     cargo update 
     rustup component add clippy
     rustup component add rustfmt
