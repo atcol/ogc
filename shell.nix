@@ -31,7 +31,6 @@ pkgs.stdenv.mkDerivation {
     export NODE_PATH=$PWD/.nix-node
     export NPM_CONFIG_PREFIX=$PWD/.nix-node
     export PATH=$NODE_PATH/bin:$PATH
-    yarn set version berry
     set -o vi
   '';
 
