@@ -25,6 +25,9 @@ init :
 	cargo install cargo-tarpaulin
 	cargo install cargo-audit
 	cargo install cargo-outdated
+	cargo install cargo-release
+	cargo install cargo-udeps
+	cargo install cargo-geiger
 
 .PHONY: build
 build ${DIR_RELEASE}/${BIN_NAME} :
