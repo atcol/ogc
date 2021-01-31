@@ -20,14 +20,14 @@ init :
 	rustup override set nightly
 	rustup component add clippy
 	rustup component add rustfmt
-	cargo install cargo-watch
-	cargo install cargo-edit
-	cargo install cargo-tarpaulin
-	cargo install cargo-audit
-	cargo install cargo-outdated
-	cargo install cargo-release
-	cargo install cargo-udeps
-	cargo install cargo-geiger
+	cargo install cargo-watch --locked cargo
+	cargo install cargo-edit --locked cargo
+	cargo install cargo-tarpaulin --locked cargo
+	cargo install cargo-audit --locked cargo
+	cargo install cargo-outdated --locked cargo
+	cargo install cargo-release --locked cargo
+	cargo install cargo-udeps --locked cargo
+	cargo install cargo-geiger --locked cargo
 
 .PHONY: build
 build ${DIR_RELEASE}/${BIN_NAME} :
