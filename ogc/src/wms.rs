@@ -68,7 +68,7 @@ pub trait Wms {
   }
 
   /// Perform the GetMap request against the configured endpoint
-  async fn get_map(&mut self, req: GetMapParameters) -> anyhow::Result<bytes::Bytes>;
+  async fn get_map(&mut self, req: GetMapParameters) -> anyhow::Result<Vec<u8>>;
 }
 
 /// A configurable WMS endpoint
@@ -125,7 +125,7 @@ impl Wms for WebMappingService {
     }
   }
 
-  async fn get_map(&mut self, req: GetMapParameters) -> anyhow::Result<bytes::Bytes> {
+  async fn get_map(&mut self, req: GetMapParameters) -> anyhow::Result<Vec<u8>> {
     let mut url = self.url.clone().unwrap();
     url
       .query_pairs_mut()
@@ -158,6 +158,7 @@ impl Wms for WebMappingService {
               .bytes()
               .await
               .ok()
+              .map(|b| b.to_vec())
               .context("Failed to stream image data")
           } else if ct_type.to_str().unwrap().contains("/xml") {
             Err(anyhow::Error::msg(format!(

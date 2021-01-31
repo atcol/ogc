@@ -1,0 +1,26 @@
+{
+    "niv": {
+        "branch": "master",
+        "description": "Easy dependency management for Nix projects",
+        "homepage": "https://github.com/nmattia/niv",
+        "owner": "nmattia",
+        "repo": "niv",
+        "rev": "62fcf7d0859628f1834d84a7a0706ace0223c27e",
+        "sha256": "06ghvcsarvi32awxvgdxivaji8fsdhv46p49as8xx8whwia9d3rh",
+        "type": "tarball",
+        "url": "https://github.com/nmattia/niv/archive/62fcf7d0859628f1834d84a7a0706ace0223c27e.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "nixpkgs": {
+        "branch": "release-20.03",
+        "description": "Nix Packages collection",
+        "homepage": "",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "929768261a3ede470eafb58d5b819e1a848aa8bf",
+        "sha256": "0zi54vbfi6i6i5hdd4v0l144y1c8rg6hq6818jjbbcnm182ygyfa",
+        "type": "tarball",
+        "url": "https://github.com/NixOS/nixpkgs/archive/929768261a3ede470eafb58d5b819e1a848aa8bf.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    }
+}
