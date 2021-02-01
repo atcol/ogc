@@ -49,7 +49,7 @@ jobs:
     - uses: actions-rs/cargo@v1
       with:
         command: build
-        args: --release --target ${{ matrix.target }} -A non_snake_case
+        args: --release --target ${{ matrix.target }}
 
     - uses: actions-rs/cargo@v1
       with:
@@ -57,11 +57,13 @@ jobs:
         args: --verbose --doc -- --test-threads 3
 
     - uses: actions-rs/cargo@v1
+      continue-on-error: true
       with:
         command: fmt
         args: --all -- --check
 
     - uses: actions-rs/cargo@v1
+      continue-on-error: true
       with:
         command: clippy
         args: -- -D warnings
