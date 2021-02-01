@@ -31,12 +31,21 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-cargo-target-${{ hashFiles('Cargo.toml') }}
           ${{ runner.os }}-cargo-target
-    - name: Init Environment
-      run: make init
-    - name: Build
-      run: cargo build --verbose --release
-    - name: Run tests
-      run: cargo test --verbose
+    - name: Install latest nightly
+      uses: actions-rs/toolchain@v1
+      with:
+          toolchain: nightly
+          override: true
+          components: rustfmt, clippy
+    - name: Run cargo check
+      uses: actions-rs/cargo@v1
+      with:
+        command: check
+    - name: Run cargo check
+      uses: actions-rs/cargo@v1
+      with:
+        command: test --verbose --doc
+
     - name: Upload WMS Artefact
       uses: actions/upload-artifact@v2.2.1
       with:
