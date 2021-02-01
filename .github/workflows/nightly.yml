@@ -67,19 +67,3 @@ jobs:
       with:
         command: clippy
         args: -- -D warnings
-
-    - name: Upload WMS Artefact
-      uses: actions/upload-artifact@v2.2.1
-      with:
-        name: wms-${{ matrix.target }}
-        path: target/${{ matrix.target }}/release/wms
-        if-no-files-found: error
-        retention-days: 90
-
-    - name: Upload Geoconv artefact
-      uses: actions/upload-artifact@v2.2.1
-      with:
-        name: geoconv-${{ matrix.target }}
-        path: target/${{ matrix.target }}/release/geoconv
-        if-no-files-found: error
-        retention-days: 90
