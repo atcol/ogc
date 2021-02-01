@@ -119,11 +119,11 @@ fn convert(p: Proj, geom: geo_types::Geometry<f64>) -> geo_types::Geometry<f64> 
   }
 }
 
-fn shape_to_feature(shape: Shape) -> Feature {
-  let shape_geom: geo_types::Geometry<f64> =
-    geo_types::Geometry::try_from(shape).expect("Failed to convert shape");
-  geometry_to_feature(shape_geom)
-}
+// fn shape_to_feature(shape: Shape) -> Feature {
+//   // let shape_geom: geo_types::Geometry<f64> =
+//   //   geo_types::Geometry::try_from(shape).expect("Failed to convert shape");
+//   // geometry_to_feature(shape_geom)
+// }
 
 fn geometry_to_feature(shape_geom: geo_types::Geometry<f64>) -> Feature {
   let val = geojson::Value::from(&shape_geom);
