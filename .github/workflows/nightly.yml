@@ -19,6 +19,9 @@ jobs:
         target:
           - x86_64-unknown-linux-gnu
           - wasm32-unknown-unknown
+        target_opts:
+          - ""
+          - "-p ogc"
 
     steps:
     - uses: actions/checkout@v2
@@ -50,7 +53,7 @@ jobs:
     - uses: actions-rs/cargo@v1
       with:
         command: build
-        args: --release --target ${{ matrix.target }}
+        args: --release ${{ matrix.target_ops }} --target ${{ matrix.target }}
 
     - uses: actions-rs/cargo@v1
       with:
