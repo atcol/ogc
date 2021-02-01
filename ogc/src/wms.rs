@@ -263,7 +263,7 @@ pub struct LatLonBoundingBox {
   pub maxy: f32,
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 pub struct BoundingBox {
   pub minx: f32,
   pub miny: f32,
@@ -272,6 +272,18 @@ pub struct BoundingBox {
 
   #[serde(rename = "SRS", default)]
   pub srs: String,
+}
+
+impl Default for BoundingBox {
+  fn default() -> Self {
+    BoundingBox {
+      srs: "EPSG:4326".to_string(),
+      minx: -180.0,
+      miny: -90.0,
+      maxx: 180.0,
+      maxy: 90.0,
+    }
+  }
 }
 
 impl BoundingBox {
