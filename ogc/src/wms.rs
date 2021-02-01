@@ -57,7 +57,7 @@ use std::collections::HashSet;
 use url::Url;
 
 /// Behaviour for a Web Mapping Service endpoint as per the specification.
-#[async_trait]
+#[async_trait(?Send)]
 pub trait Wms {
   /// The GetCapabilities request
   async fn get_capabilities(&mut self) -> anyhow::Result<GetCapabilities>;
@@ -106,7 +106,7 @@ impl WebMappingService {
   }
 }
 
-#[async_trait]
+#[async_trait(?Send)]
 impl Wms for WebMappingService {
   /// The WMS GetCapabilities request
   async fn get_capabilities(&mut self) -> anyhow::Result<GetCapabilities> {
