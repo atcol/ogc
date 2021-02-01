@@ -12,6 +12,14 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust:
+          - nightly
+        target:
+          - x86_64-unknown-linux-gnu
+          - wasm32-unknown-unknown
+
     steps:
     - uses: actions/checkout@v2
     - name: Cargo Cache
@@ -30,50 +38,46 @@ jobs:
         key: ${{ runner.os }}-cargo-target-${{ hashFiles('Cargo.toml') }}
         restore-keys: |
           ${{ runner.os }}-cargo-target-${{ hashFiles('Cargo.toml') }}
-          ${{ runner.os }}-cargo-target
-    - name: Install latest nightly
-      uses: actions-rs/toolchain@v1
+          ${{ runner.os }}-cargo-targe
+    - uses: actions-rs/toolchain@v1
       with:
-          toolchain: nightly
-          override: true
-          components: rustfmt, clippy
-    - name: Run cargo check
-      uses: actions-rs/cargo@v1
+        profile: minimal
+        toolchain: ${{ matrix.rust }}
+        override: true
+        components: rustfmt, clippy
+
+    - uses: actions-rs/cargo@v1
       with:
-        command: check
-    - name: Run cargo test
-      uses: actions-rs/cargo@v1
+        command: build
+        args: --release
+
+    - uses: actions-rs/cargo@v1
       with:
-        command: test --verbose --doc
+        command: test
+        args:  --verbose --doc
+
+    - uses: actions-rs/cargo@v1
+      with:
+        command: fmt
+        args: --all -- --check
+
+    - uses: actions-rs/cargo@v1
+      with:
+        command: clippy
+        args: -- -D warnings
 
     - name: Upload WMS Artefact
       uses: actions/upload-artifact@v2.2.1
       with:
-        name: wms
-        path: target/release/wms
-        if-no-files-found: error
-        retention-days: 90
-    - name: Upload Geoconv artefact
-      uses: actions/upload-artifact@v2.2.1
-      with:
-        name: geoconv
-        path: target/release/geoconv
+        name: wms-${{ matrix.target }}
+        path: target/${{ matrix.target }}/release/wms
         if-no-files-found: error
         retention-days: 90
 
-  test-mac-win:
-    name: Test Rust ${{ matrix.rust }} on ${{ matrix.os }}
-    continue-on-error: true
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-        - { rust: nightly,            os: macos-latest }
-        - { rust: nightly,            os: windows-latest }
-    steps:
-      - uses: actions/checkout@v2
-      - uses: hecrj/setup-rust-action@v1
-        with:
-          rust-version: ${{ matrix.rust }}
-      - run: cargo test --verbose --workspace
+    - name: Upload Geoconv artefact
+      uses: actions/upload-artifact@v2.2.1
+      with:
+        name: geoconv-${{ matrix.target }}
+        path: target/${{ matrix.target }}/release/geoconv
+        if-no-files-found: error
+        retention-days: 90
