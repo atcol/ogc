@@ -1,3 +1,0 @@
-#!/bin/sh
-go get -u -v github.com/xuri/xgen/cmd/...
-~/go/bin/xgen --help
