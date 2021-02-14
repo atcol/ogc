@@ -5,7 +5,7 @@
       OGC <br/>
     </h1>
     <p>
-         Types, APIs and tools for working with common OGC services & data.
+         Types, APIs and tools for working with common OGC services & data
     </p>
 </div>
 
