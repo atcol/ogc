@@ -20,3 +20,5 @@ extern crate serde_json;
 extern crate serde_xml_rs;
 
 pub mod wms;
+
+pub mod parser;

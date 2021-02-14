@@ -11,35 +11,29 @@ repository = "https://github.com/atcol/ogc"
 version = "0.6.0"
 
 [dependencies]
-async-trait = "0.1.41"
-serde_json = "1.0.59"
 anyhow = "1.0.33"
+async-trait = "0.1.41"
+js-sys = "0.3.45"
+nom = "*"
+reqwest = "0.11.*"
 serde = "1.0.117"
 serde-xml-rs = "0.4.0"
 serde_derive = "1.0.117"
-reqwest = "0.11.*"
+serde_json = "1.0.59"
 url = "2.1.1"
-
-[target.'cfg(target_arch="wasm32")'.dependencies]
 wasm-bindgen-futures = "*"
-js-sys = "0.3.45"
-wasm-bindgen = { version = "0.2.68", features = ["serde-serialize"] }
 wasm-bindgen-test = "0.3"
+wasm-bindgen = {version = "0.2.68", features = ["serde-serialize"]}
 
-[target.'cfg(target_arch="wasm32")'.dependencies.web-sys]
+[dev-dependencies.proptest]
+version = "0.10.1"
+default-features = false
+features = ["std"]
+
+[dev-dependencies.tokio]
+features = ["full"]
+version = "1.1.1"
+
+[target."cfg(target_arch=\"wasm32\")".dependencies.web-sys]
+features = ["Headers", "Request", "RequestInit", "RequestMode", "Response", "Window", "FormData", "Blob", "BlobPropertyBag", "ServiceWorkerGlobalScope"]
 version = "0.3.25"
-features = [
-    "Headers",
-    "Request",
-    "RequestInit",
-    "RequestMode",
-    "Response",
-    "Window",
-    "FormData",
-    "Blob",
-    "BlobPropertyBag",
-    "ServiceWorkerGlobalScope",
-]
-
-[dev-dependencies]
-tokio = { version = "1.1.1", features = ["full"] }
