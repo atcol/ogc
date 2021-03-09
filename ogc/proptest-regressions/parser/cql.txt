@@ -5,3 +5,6 @@
 # It is recommended to check this file in to source control so that
 # everyone who runs the test benefits from these saved cases.
 cc f7a7fd5029a17e85cf3cff7a22173d58112311940539aed1e49e67f120f76275 # shrinks to ch = "a.", ch2 = "0."
+cc a80d66227d97e7e16f12759938db0c35e7479ffcf25d74a045eadd781d03c201 # shrinks to operand = "nANAA"
+cc a02b6099d65aac9d8ab4def4499c302cc3e9b8f415a4869ee4a49a029128b6dc # shrinks to left_operand = "nanAaAAaAA", operator = "/", right_operand = "0000000000"
+cc d499692d4c9bb4ff5679dbf62814f8530103d045452a2d78530a31588c498578 # shrinks to left_operand = "nanaaaaaAa", operator = "-", right_operand = "aaAaaaaaaa"
