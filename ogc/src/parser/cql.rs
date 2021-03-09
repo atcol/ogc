@@ -147,31 +147,11 @@ pub enum Sign {
     Negative,
 }
 
-impl From<char> for Sign {
-    ///FIXME try_from
-    fn from(item: char) -> Self {
-        match item {
-            '-' => Sign::Negative,
-            _   => Sign::Positive,
-        }
-    }
-}
-
 impl From<f32> for Sign {
     ///FIXME try_from
     fn from(item: f32) -> Self {
-        if item < 0 as f32 {
-            Sign::Negative
-        } else {
-            Sign::Positive
-        }
-    }
-}
-
-impl From<f64> for Sign {
-    ///FIXME try_from
-    fn from(item: f64) -> Self {
-        if item < 0 as f64 {
+        println!("From f32: {} {}", item, item < 0f32);
+        if item < 0f32 {
             Sign::Negative
         } else {
             Sign::Positive
@@ -183,7 +163,7 @@ impl From<f64> for Sign {
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct NumericLiteral {
     sign: Sign,
-    value: f64,
+    value: f32,
     //FIXME more fields here
 }
 
@@ -225,10 +205,10 @@ impl Operand {
     }
 }
 
-impl From<f64> for Operand {
-    fn from(item: f64) -> Self {
+impl From<f32> for Operand {
+    fn from(item: f32) -> Self {
         Operand {
-            literal: Some(NumericLiteral { sign: if item >= 0.0 { Sign::Positive } else { Sign::Positive }, value: item }),
+            literal: Some(NumericLiteral { sign: if item >= 0.0 { Sign::Positive } else { Sign::Negative }, value: item }),
             identifier: None,
             function: None
         }
@@ -363,7 +343,6 @@ fn arithmetic_expression_spaced<'a>(input: &'a str) -> IResult<&'a str, (Operand
                      delimited(space0, arithmetic_operand, space0)))(input)
 }
 
-
 /// #=============================================================================#
 /// # Definition of a FUNCTION
 /// # The functions offered by an implementation are provided at `/functions`
@@ -433,20 +412,23 @@ pub fn character_literal<'a>(input: &'a str) -> IResult<&'a str, ArithmeticExpre
 /// 
 /// sign = plusSign | minusSign;
 pub fn numeric_literal<'a>(input: &'a str) -> IResult<&'a str, NumericLiteral> {
-    alt((unsigned_numeric_literal, signed_numeric_literal))(input) //TODO approximateNumericLiteral etc
+    println!("Numeric literal {}", input);
+    signed_numeric_literal(input) //TODO approximateNumericLiteral etc
 }
 
 /// signedNumericLiteral = [sign] exactNumericLiteral | approximateNumericLiteral;
 pub fn signed_numeric_literal<'a>(input: &'a str) -> IResult<&'a str, NumericLiteral> {
+    println!("Signed num lit {}", input);
     // let wrapped = (tag("-+"), space0);
-    map(alt((number::complete::double, preceded(satisfy(|c| c == '+' || c == '-'), number::complete::double))),
+    map(alt((number::complete::float, preceded(satisfy(|c| c == '+' || c == '-'), number::complete::float))),
      |x| NumericLiteral { sign: Sign::from(x), value: x })(input)
 }
 
-/// unsignedNumericLiteral = exactNumericLiteral | approximateNumericLiteral;
-pub fn unsigned_numeric_literal<'a>(input: &'a str) -> IResult<&'a str, NumericLiteral> {
-    map(number::complete::float, |x| NumericLiteral { sign: Sign::Positive, value: x.into()})(input)
-}
+// /// unsignedNumericLiteral = exactNumericLiteral | approximateNumericLiteral;
+// pub fn unsigned_numeric_literal<'a>(input: &'a str) -> IResult<&'a str, NumericLiteral> {
+//     println!("Unsigned num lit {}", input);
+//     map(number::complete::float, |x| NumericLiteral { sign: Sign::Positive, value: x.into()})(input)
+// }
 
 pub fn spatial_literal<'a>(input: &'a str) -> IResult<&'a str, ArithmeticExpression> {
     todo!("Not implemented")
@@ -470,21 +452,12 @@ fn concat_values(x: Vec<Identifier>) -> String {
 mod tests {
     use proptest::prelude::*;
     use super::{Argument, ArithmeticExpression, ArithmeticOperator, Function, Identifier, NumericLiteral, Operand, Sign,
-         arithmetic_expression, arithmetic_expression_spaced, arithmetic_operand, arithmetic_operator, identifier, identifier_start, signed_numeric_literal, unsigned_numeric_literal};
+         arithmetic_expression, arithmetic_expression_spaced, arithmetic_operand, arithmetic_operator, identifier, identifier_start, signed_numeric_literal};
 
     proptest! {
 
         #[test]
-        fn parse_unsigned_numeric_literal(number: u32) {
-            let num = number.to_string();
-            let r = unsigned_numeric_literal(&num).unwrap();
-            assert_eq!(r.0, "");
-            assert_eq!(r.1.sign, Sign::Positive);
-            assert_eq!(r.1.value, number as f64);
-        }
-
-        #[test]
-        fn parse_signed_numeric_literal(num: f64) {
+        fn parse_signed_numeric_literal(num: f32) {
             let number = &num.to_string();
             let r = signed_numeric_literal(number).unwrap();
             assert_eq!(r.0, "");
@@ -502,7 +475,7 @@ mod tests {
         }
 
         #[test]
-        fn parse_arithmetic_operand_function(function in "[a-zA-Z]{5}", num1: f64, num2: f64) {
+        fn parse_arithmetic_operand_function(function in "[a-zA-Z]{5}", num1: f32, num2: f32) {
             let ex = format!("{}({},{})", function, num1, num2);
             let r = arithmetic_operand(&ex).unwrap();
             assert_eq!(r.0, "");
@@ -547,9 +520,9 @@ mod tests {
         }
 
         #[test]
-        fn parse_arithmetic_numeric(left_operand in "[a-zA-Z]{10}", operator in "[-+*/]", right_operand: f64) {
+        fn parse_arithmetic_numeric(left_operand in "[a-zA-Z]{10}", operator in "[-+*/]", right_operand: f32) {
             let example = &format!("{} {} {}", left_operand, operator, right_operand);
-            println!("Example is {}", example);
+            println!("Example numeric 1 is {}", example);
             let r = arithmetic_expression(example).unwrap();
             assert_eq!(r.0, "");
             assert_eq!(r.1.left_operand, Operand::identifier(Identifier::new(left_operand.clone(), false)));
@@ -557,7 +530,7 @@ mod tests {
             assert_eq!(r.1.operator, ArithmeticOperator::from(operator.clone().pop().unwrap()));
 
             let example2 = &format!("{} {} {}", right_operand, operator, left_operand);
-            println!("Example is {}", example2);
+            println!("Example numeric 2 is {}", example2);
             let r2 = arithmetic_expression(example2).unwrap();
             assert_eq!(r2.0, "");
             assert_eq!(r2.1.right_operand, Operand::identifier(Identifier::new(left_operand.clone(), false)));
@@ -566,7 +539,7 @@ mod tests {
         }
 
         #[test]
-        fn parse_arithmetic_spaced(left_operand in "[a-zA-Z]{10}", operator in "[-+*/]", right_operand: f64) {
+        fn parse_arithmetic_spaced(left_operand in "[a-zA-Z]{10}", operator in "[-+*/]", right_operand: f32) {
             //FIXME unsigned too?
             let example = &format!("{} {} {}", left_operand, operator, right_operand);
             println!("Example is {}", example);
@@ -672,21 +645,21 @@ mod tests {
             ArithmeticExpression { 
                 left_operand: Operand::from(Identifier::new("speed".to_string(), false)),
                 operator: ArithmeticOperator::MinusSign,
-                right_operand: Operand::from(10f64)
+                right_operand: Operand::from(10f32)
             },
             arithmetic_expression("speed - 10").unwrap().1);
         assert_eq!(
             ArithmeticExpression { 
                 left_operand: Operand::from(Identifier::new("speed".to_string(), false)),
                 operator: ArithmeticOperator::Asterisk,
-                right_operand: Operand::from(10f64)
+                right_operand: Operand::from(10f32)
             },
             arithmetic_expression("speed * 10").unwrap().1);
         assert_eq!(
             ArithmeticExpression { 
                 left_operand: Operand::from(Identifier::new("speed".to_string(), false)),
                 operator: ArithmeticOperator::Solidus,
-                right_operand: Operand::from(10f64)
+                right_operand: Operand::from(10f32)
             },
             arithmetic_expression("speed / 10").unwrap().1);
     }
@@ -697,7 +670,7 @@ mod tests {
         let r = arithmetic_expression(example).unwrap();
         assert_eq!(r.0, "");
         assert_eq!(r.1.left_operand, Operand::identifier(Identifier::new("AAAAAAAaaa".to_string(), false)));
-        assert_eq!(r.1.right_operand, Operand::literal(NumericLiteral { value: "282120334891901200000000000000000000000000000000000000000000000000000000000000000000.0".parse().unwrap(), sign: Sign::Negative }));
         assert_eq!(r.1.operator, ArithmeticOperator::from("-"));
+        assert_eq!(r.1.right_operand, Operand::literal(NumericLiteral { value: -f32::INFINITY, sign: Sign::Negative }));
     }
 }
