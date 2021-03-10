@@ -20,6 +20,16 @@
 
 <br/>
 
+## OGC Technology Support
+
+The following support is intended.
+
+| Spec. | Status |
+|-------|--------|
+| WFS   | Partial |
+| WMS   | Partial |
+| Filter| Partial |
+
 ## Development
 
 Clone and build with cargo:
