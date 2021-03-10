@@ -24,11 +24,11 @@
 
 The following support is intended.
 
-| Spec. | Status |
-|-------|--------|
-| WFS   | Partial |
-| WMS   | Partial |
-| Filter| Partial |
+| Standard | Status |
+|----------|--------|
+| [WFS](https://www.ogc.org/standards/wfs)   | Partial |
+| [WMS](https://www.ogc.org/standards/wms)   | Partial |
+| [Filter](http://docs.opengeospatial.org/DRAFTS/19-079.html)| Partial |
 
 ## Development
 
